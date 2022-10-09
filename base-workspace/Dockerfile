@@ -246,29 +246,6 @@ RUN \
 ADD --chown=${NB_UID}:${NB_GID} ./resources/ ${RESOURCES_PATH}/
 ADD --chown=${NB_UID}:${NB_GID} ./resources/etc /etc/
 
-
-# Install nginx and Openresty to be a reverse proxy
-########### Openresty Install
-# ARG RESTY_VERSION=1.21.4.1-3
-# ARG RESTY_CONTAINER=openresty/openresty:${RESTY_VERSION}-focal
-
-ENV RESTY_VERSION=${RESTY_VERSION} \
-    RESTY_PREFIX=/usr/local/openresty  \
-    NGINX_PREFIX=/usr/local/openresty/nginx
-
-COPY --from=copy-resty ${RESTY_PREFIX} ${RESTY_PREFIX}
-
-# Add additional binaries into PATH for convenience
-ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
-
-# Add LuaRocks paths
-# If OpenResty changes, these may need updating:
-#    /usr/local/openresty/bin/resty -e 'print(package.path)'
-#    /usr/local/openresty/bin/resty -e 'print(package.cpath)'
-ENV LUA_PATH="/usr/local/openresty/site/lualib/?.ljbc;/usr/local/openresty/site/lualib/?/init.ljbc;/usr/local/openresty/lualib/?.ljbc;/usr/local/openresty/lualib/?/init.ljbc;/usr/local/openresty/site/lualib/?.lua;/usr/local/openresty/site/lualib/?/init.lua;/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/?/init.lua;./?.lua;/usr/local/openresty/luajit/share/luajit-2.1.0-beta3/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua;/usr/local/openresty/luajit/share/lua/5.1/?.lua;/usr/local/openresty/luajit/share/lua/5.1/?/init.lua"
-
-ENV LUA_CPATH="/usr/local/openresty/site/lualib/?.so;/usr/local/openresty/lualib/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so"
-
 # Install system packages
 RUN \
 	apt-get update \
@@ -283,6 +260,7 @@ RUN \
 		bash-completion \
 		binutils \
 		clinfo \
+		curl \
 		dbus \
 		dbus-x11 \
 		desktop-file-utils \
@@ -372,18 +350,119 @@ RUN \
 	# Cleanup
     && clean-layer
 
+# Install system packages
+RUN \
+	apt-get update  && apt-get install -y --no-install-recommends apt-utils \
+	&& /bin/bash ${RESOURCES_PATH}/tools/vs-code-desktop.sh --install \
+	&& /bin/bash ${RESOURCES_PATH}/tools/vs-code-server.sh --install \
+    # Fix permissions
+    # && fix-permissions ${RESOURCES_PATH} \
+	## netdata
+    && /bin/bash ${RESOURCES_PATH}/tools/netdata.sh --install \
+    && chown -R netdata:netdata /etc/netdata \
+    && chown -R netdata:netdata /usr/share/netdata \
+    && chown -R netdata:netdata /var/lib/netdata \
+    && usermod -a ${NB_USER} -G netdata \
+	## ohmyzsh
+    && /bin/bash ${RESOURCES_PATH}/tools/oh-my-zsh.sh --install \
+	# Cleanup
+    && clean-layer
+
+
+# Install nginx and Openresty to be a reverse proxy
+########### Openresty Install
+# ARG RESTY_VERSION=1.21.4.1-3
+# ARG RESTY_CONTAINER=openresty/openresty:${RESTY_VERSION}-focal
+
+ENV RESTY_VERSION=${RESTY_VERSION} \
+    RESTY_PREFIX=/usr/local/openresty  \
+    NGINX_PREFIX=/usr/local/openresty/nginx
+
+COPY --from=copy-resty ${RESTY_PREFIX} ${RESTY_PREFIX}
+
+# Add additional binaries into PATH for convenience
+ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
+
+# Add LuaRocks paths
+# If OpenResty changes, these may need updating:
+#    /usr/local/openresty/bin/resty -e 'print(package.path)'
+#    /usr/local/openresty/bin/resty -e 'print(package.cpath)'
+ENV LUA_PATH="/usr/local/openresty/site/lualib/?.ljbc;/usr/local/openresty/site/lualib/?/init.ljbc;/usr/local/openresty/lualib/?.ljbc;/usr/local/openresty/lualib/?/init.ljbc;/usr/local/openresty/site/lualib/?.lua;/usr/local/openresty/site/lualib/?/init.lua;/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/?/init.lua;./?.lua;/usr/local/openresty/luajit/share/luajit-2.1.0-beta3/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua;/usr/local/openresty/luajit/share/lua/5.1/?.lua;/usr/local/openresty/luajit/share/lua/5.1/?/init.lua"
+
+ENV LUA_CPATH="/usr/local/openresty/site/lualib/?.so;/usr/local/openresty/lualib/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so;/usr/local/openresty/luajit/lib/lua/5.1/?.so"
+
+# Configure NGINX 
+RUN \
+    echo "Rest verions: ${RESTY_VERSION} " \
+    nginx -v \
+    && luarocks install lua-resty-http \
+    && luarocks install lua-resty-string
+
 RUN \
 	touch /var/run/crond.pid \
 	&& chmod gu+rw /var/run \
-	&& chmod gu+s /usr/sbin/cron
+	&& chmod gu+s /usr/sbin/cron \
+	&& chmod 777 /etc/environment \
+	&& ln -s ${RESOURCES_PATH} /resources \
+	&& rm -rf /usr/local/openresty/nginx/logs/* \
+	&& touch /usr/local/openresty/nginx/logs/error.log \
+	&& touch /usr/local/openresty/nginx/logs/access.log \
+	&& chmod 777 -R /usr/local/openresty/nginx/logs/ \
+	&& echo "DONE"
 
 USER ${NB_UID}
+
+WORKDIR /tmp/
+
+ARG LIBJPEG_TURBO_TREEISH=2.1.3
+ARG VIRTUALGL_TREEISH=3.0
+ARG TURBOVNC_TREEISH=3.0
+
 RUN \
 	mamba install \
 		--yes \
 		python-crontab \ 
-		# Cleanup
+	&& ${PIPX_HOME}/bin/pipx install --system-site-packages --pip-args '--no-cache-dir --force-reinstall' glances \
+    && ${PIPX_HOME}/bin/pipx inject glances --system-site-packages --pip-args '--no-cache-dir --force-reinstall' "glances[action,browser,cloud,cpuinfo,docker,export,folders,gpu,graph,ip,raid,snmp,web,wifi]" \
+	# Create empty notebook configuration
+    && mkdir -p $HOME/.jupyter/nbconfig/  \
+    && printf "{\"load_extensions\": {}}" > $HOME/.jupyter/nbconfig/notebook.json \
+    # Install Jupyter Tooling Extension
+    && pip install --no-cache-dir /etc/jupyter/extensions/tooling-extension/ \
+	# Install libjpeg-turbo VirtualGL TurboVNC
+	&& sudo bash ${RESOURCES_PATH}/tools/turbovnc.sh \
+	## novnc
+	# Install VNC
+    # required for websockify
+    # apt-get install -y python-numpy  \
+    && cd ${RESOURCES_PATH} \
+    # Install websockify
+    && mkdir -p ./novnc/utils/websockify \
+    # Before updating the noVNC version, we need to make sure that our monkey patching scripts still work!!
+    && wget -qO- https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz | tar xz --strip 1 -C ./novnc \
+    && wget -qO- https://github.com/novnc/websockify/archive/v0.9.0.tar.gz | tar xz --strip 1 -C ./novnc/utils/websockify \
+    && chmod +x -v ./novnc/utils/*.sh \
+	## create index.html to forward automatically to `vnc.html`
+    # Needs to be run after patching
+	&& ln -sf ${RESOURCES_PATH}/novnc/vnc.html ${RESOURCES_PATH}/novnc/index.html \
+    # create user vnc directory
+    && mkdir -p $HOME/.vnc \
+	## ungit
+    && /bin/bash ${RESOURCES_PATH}/tools/ungit.sh --install \
+	## Filebrowser
+    && /bin/bash ${RESOURCES_PATH}/tools/filebrowser.sh --install \
+	# Cleanup
     && clean-layer
+
+# Monkey Patching novnc: Styling and added clipboard support. All changed sections are marked with CUSTOM CODE
+COPY --chown="${NB_UID}:${NB_GID}" resources/novnc/ ${RESOURCES_PATH}/novnc/
+
+# Configure Home folder (e.g. xfce)
+COPY --chown="${NB_UID}:${NB_GID}" resources/home/ $HOME/
+
+# Setup PATH
+# ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games${PATH:+:${PATH}}
+ENV PATH=/opt/libjpeg-turbo/bin:/opt/VirtualGL/bin:/opt/TurboVNC/bin${PATH:+:${PATH}}
 
 # RUN \
 # 	&& mkdir -p 
@@ -392,21 +471,22 @@ EXPOSE 8080
 
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--"]
-CMD ["start-notebook.sh"]
+CMD ["python", "/resources/docker-entrypoint.py"]
 
 # Copy local files as late as possible to avoid cache busting
 COPY start.sh start-notebook.sh start-singleuser.sh /usr/local/bin/
 # Currently need to have both jupyter_notebook_config and jupyter_server_config to support classic and lab
-COPY jupyter_server_config.py /etc/jupyter/
+# COPY jupyter_server_config.py /etc/jupyter/
 
-# Fix permissions on /etc/jupyter as root
+# # Fix permissions on /etc/jupyter as root
 USER root
 
-# Legacy for Jupyter Notebook Server, see: [#1205](https://github.com/jupyter/docker-stacks/issues/1205)
-RUN sed -re "s/c.ServerApp/c.NotebookApp/g" \
-    /etc/jupyter/jupyter_server_config.py > /etc/jupyter/jupyter_notebook_config.py && \
-    fix-permissions /etc/jupyter/ \
-	&& fix-permissions /usr/local/bin/
+RUN fix-permissions /usr/local/bin/
+# # Legacy for Jupyter Notebook Server, see: [#1205](https://github.com/jupyter/docker-stacks/issues/1205)
+# RUN sed -re "s/c.ServerApp/c.NotebookApp/g" \
+#     /etc/jupyter/jupyter_server_config.py > /etc/jupyter/jupyter_notebook_config.py && \
+#     fix-permissions /etc/jupyter/ \
+# 	&& fix-permissions /usr/local/bin/
 
 
 # Set default values for environment variables

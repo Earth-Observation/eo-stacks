@@ -59,4 +59,4 @@ if os.path.exists(startup_custom_script):
 
 # Run supervisor process - main container process
 # call('sudo -u root -H /bin/bash -c "export /etc/environment && env | sort && /opt/conda/envs/pipx/bin/supervisord -n -c /etc/supervisor/supervisord.conf"', shell=True)
-call('sudo --preserve-env=HOME,PATH -u root -H /bin/bash -c "/opt/conda/envs/pipx/bin/supervisord -n -c /etc/supervisor/supervisord.conf"', shell=True)
+call('sudo --preserve-env=HOME,PATH,USER -u root -H /bin/bash -c "/opt/conda/envs/pipx/bin/supervisord -n -c /etc/supervisor/supervisord.conf"', shell=True)
