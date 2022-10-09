@@ -1,0 +1,9 @@
+{
+    "ServerApp": {
+        "jpserver_extensions": {
+            "jupyterlab_iframe.extension": true,
+            "jupyter_nbextensions_configurator": true,
+            "jupyter_tooling.tooling_handler": true
+        }
+    }
+  }

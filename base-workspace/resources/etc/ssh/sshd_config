@@ -1,0 +1,46 @@
+Protocol                        2
+HostKey                         /etc/ssh/ssh_host_ed25519_key
+HostKey                         /etc/ssh/ssh_host_rsa_key
+ListenAddress                   0.0.0.0
+Port                            22
+# Logging Configuration
+SyslogFacility                  AUTH
+LogLevel                        INFO
+UseDNS                          no
+UsePAM                          yes
+
+
+# Allow TCP Forwarding: required by vs code remote development: 
+# https://code.visualstudio.com/docs/remote/troubleshooting#_enabling-alternate-ssh-authentication-methods
+AllowTcpForwarding              yes
+AcceptEnv                       PULSE_SERVER
+PermitRootLogin                 no
+PermitEmptyPasswords            no
+PermitUserEnvironment           no
+
+# Alive Interval will make SSH connection more stable 
+ClientAliveInterval             60
+ClientAliveCountMax             5
+# Allow Remote Port forwarding to an address other than localhost
+# https://askubuntu.com/questions/50064/reverse-port-tunnelling
+GatewayPorts 			        clientspecified
+PubkeyAuthentication            yes
+# Only allow key-based authentication -> higher security
+PasswordAuthentication 		    no
+ChallengeResponseAuthentication no
+GSSAPIAuthentication            no
+# Activate SFTP server
+Subsystem                       sftp internal-sftp
+# Allow SSH-Agent Forwarding
+AllowAgentForwarding 		    yes
+
+LoginGraceTime                  30
+TCPKeepAlive                    yes
+
+
+# Activate X11 Forwarding (GUI Access)  
+X11Forwarding 			        yes
+X11UseLocalhost 		        no
+X11DisplayOffset 		        10
+PrintMotd                       no
+PrintLastLog                    no
