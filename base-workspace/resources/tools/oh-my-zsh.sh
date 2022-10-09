@@ -114,6 +114,9 @@ END
     # sudo apt-get update
     # sudo apt-get install zsh-completions
 	chmod 755 -R ~/.oh-my-zsh
+	chown $NB_UID:$NB_GID -R ~/.oh-my-zsh
+	chown $NB_UID:$NB_GID -R ~/.fonts
+	chown $NB_UID:$NB_GID -R ~/.zshrc
 
 else
     echo "ZSH is already installed"

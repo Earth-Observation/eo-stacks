@@ -47,7 +47,7 @@ if not os.path.isfile(HOME + "/.ssh/"+SSH_KEY_NAME):
     call("ssh-keygen -f ~/.ssh/{} -t ed25519 -q -N \"\" > /dev/null".format(SSH_KEY_NAME), shell=True)
 
 # Copy public key to resources, otherwise nginx is not able to serve it
-call("/bin/cp -rf " + HOME + "/.ssh/id_ed25519.pub /resources/public-key.pub", shell=True)
+call("/bin/cp -rf " + HOME + "/.ssh/id_ed25519.pub " + RESOURCE_FOLDER + "/public-key.pub", shell=True)
 
 # Make sure that knonw hosts and authorized keys exist
 call("touch " + HOME + "/.ssh/authorized_keys", shell=True)

@@ -184,47 +184,47 @@ fi
 
 # Create /run/dbus/ directory if it does not exist
 if [ ! -d /run/dbus/ ]; then
-	mkdir -p /run/dbus/
-	chmod 755 /run/dbus/
-	chown messagebus: /run/dbus/
+	sudo mkdir -p /run/dbus/
+	sudo chmod 755 /run/dbus/
+	sudo chown messagebus: /run/dbus/
 fi
 
 # Create /run/sshd/ directory if it does not exist
 if [ ! -d /run/sshd/ ]; then
-	mkdir -p /run/sshd/
-	chmod 755 /run/sshd/
+	sudo mkdir -p /run/sshd/
+	sudo chmod 755 /run/sshd/
 fi
 
 # Create /run/udev/ directory if it does not exist
 if [ ! -d /run/udev/ ]; then
-	mkdir -p /run/udev/
-	chmod 755 /run/udev/
+	sudo mkdir -p /run/udev/
+	sudo chmod 755 /run/udev/
 fi
 
 # Create /run/user/${NB_UID}/ directory if it does not exist
 if [ ! -d /run/user/"${NB_UID:?}"/ ]; then
-    mkdir -p /run/user/"${NB_UID:?}"/
-    chmod 700 /run/user/"${NB_UID:?}"/
-    chown "${NB_USER:?}:" /run/user/"${NB_UID:?}"/
+    sudo mkdir -p /run/user/"${NB_UID:?}"/
+    sudo chmod 700 /run/user/"${NB_UID:?}"/
+    sudo chown "${NB_USER:?}:" /run/user/"${NB_UID:?}"/
 fi
 
 # Create /var/log/supervisor directory if it does not exist
 if [ ! -d /var/log/supervisor ]; then
-    mkdir -p /var/log/supervisor
-    chmod 700 /var/log/supervisor
-    chown "${NB_USER:?}:" /var/log/supervisor
+    sudo mkdir -p /var/log/supervisor
+    sudo chmod 700 /var/log/supervisor
+    sudo chown "${NB_USER:?}:" /var/log/supervisor
 fi
 
 # Create /var/log/supervisor directory if it does not exist
 if [ ! -d /var/log/nginx ]; then
-    mkdir -p /var/log/supervisor
-    chmod 700 /var/log/supervisor
-    chown "${NB_USER:?}:" /var/log/supervisor
+    sudo mkdir -p /var/log/supervisor
+    sudo chmod 700 /var/log/supervisor
+    sudo chown "${NB_USER:?}:" /var/log/supervisor
 fi
 
 # Enable xdummy service if ENABLE_XDUMMY is true
 if [ "${ENABLE_XDUMMY:?}" = 'true' ]; then
-	ln -s /etc/sv/xdummy /etc/service/
+	sudo ln -s /etc/sv/xdummy /etc/service/
 fi
 
 # Define VGL_DISPLAY variable if it is not set
@@ -245,10 +245,10 @@ fi
 
 # Generate SSH keys if they do not exist
 if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
-	ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N '' >/dev/null
+	sudo ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N '' >/dev/null
 fi
 if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
-	ssh-keygen -t rsa -b 4096 -f /etc/ssh/ssh_host_rsa_key -N '' >/dev/null
+	sudo ssh-keygen -t rsa -b 4096 -f /etc/ssh/ssh_host_rsa_key -N '' >/dev/null
 fi
 
 # Generate RDP certificate if it does not exist
@@ -256,11 +256,11 @@ if [ ! -f "${XRDP_TLS_KEY_PATH:?}" ] || [ ! -f "${XRDP_TLS_CRT_PATH:?}" ]; then
 	FQDN=$(hostname --fqdn)
 
 	(umask 077 \
-		&& openssl ecparam -genkey -name prime256v1 > "${XRDP_TLS_KEY_PATH:?}" \
+		&& sudo openssl ecparam -genkey -name prime256v1 > "${XRDP_TLS_KEY_PATH:?}" \
 	) >/dev/null
 
 	(umask 022 \
-		&& openssl req -x509 -sha256 -days 3650 -subj "/CN=${FQDN:?}" -addext "subjectAltName=DNS:${FQDN:?}" -key "${XRDP_TLS_KEY_PATH:?}" > "${XRDP_TLS_CRT_PATH:?}" \
+		&& sudo openssl req -x509 -sha256 -days 3650 -subj "/CN=${FQDN:?}" -addext "subjectAltName=DNS:${FQDN:?}" -key "${XRDP_TLS_KEY_PATH:?}" > "${XRDP_TLS_CRT_PATH:?}" \
 	) >/dev/null
 fi
 

@@ -58,4 +58,5 @@ if os.path.exists(startup_custom_script):
     call("/bin/bash " + startup_custom_script, shell=True)
 
 # Run supervisor process - main container process
-call('supervisord -n -c /etc/supervisor/supervisord.conf', shell=True)
+# call('sudo -u root -H /bin/bash -c "export /etc/environment && env | sort && /opt/conda/envs/pipx/bin/supervisord -n -c /etc/supervisor/supervisord.conf"', shell=True)
+call('sudo --preserve-env=HOME,PATH -u root -H /bin/bash -c "/opt/conda/envs/pipx/bin/supervisord -n -c /etc/supervisor/supervisord.conf"', shell=True)
