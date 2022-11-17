@@ -519,6 +519,12 @@ HEALTHCHECK  --interval=15s --timeout=3s --start-period=5s --retries=3 \
     CMD wget -O- --no-verbose --tries=1 --no-check-certificate \
     http${GEN_CERT:+s}://localhost:${NOTEBOOKAPP_PORT}${JUPYTERHUB_SERVICE_PREFIX:-/}api || exit 1
 
+RUN if [ -z ${NVIDIA_PRODUCT_NAME+x} ]; then \
+        echo "Not Nvidia Product"; \
+    else \
+        echo "NVIDIA_PRODUCT_NAME is set to '$NVIDIA_PRODUCT_NAME'" && \
+        /usr/bin/python -m ipykernel install --name tf2-py3-nv --display-name "Python 3 (TF2-Nvidia)" ; \
+    fi
 
 # Switch back to jovyan to avoid accidental container runs as root
 USER ${NB_UID}

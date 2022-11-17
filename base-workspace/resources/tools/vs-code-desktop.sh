@@ -19,6 +19,7 @@ if [ ! -f "/usr/share/code/code" ]; then
     # wget -q https://az764295.vo.msecnd.net/stable/57fd6d0195bb9b9d1b49f6da5db789060795de47/code_1.67.0-1651667246_amd64.deb -O ./vscode.deb
     # wget -q https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64 -O ./vscode.deb
     # wget -O ./vscode.deb https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64 
+    # wget -q https://code.visualstudio.com/sha/download\?build\=stable\&os\=linux-x64 -O /tmp/code-stable-x64.tar.gz
     wget -q "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64" -O /tmp/vscode.deb
 
     # wget -q https://go.microsoft.com/fwlink/?LinkID=760868 -O /tmp/vscode.deb

@@ -54,10 +54,12 @@ args.flavor = str(args.flavor).lower()
 if args.flavor == "all":
     args.flavor = "base"
     build()
+    args.flavor = "gpu"
+    build()
     sys.exit(0)
 # nvidia/tensorflow:22.04-tf2-py3
 # unknown flavor -> try to build from subdirectory
-if args.flavor not in ["base"]:
+if args.flavor not in ["base", "gpu"]:
     # assume that flavor has its own directory with build.py
     build(args.flavor + "-flavor")
     sys.exit(0)
@@ -67,7 +69,8 @@ if args.name:
     service_name = args.name
 
 # add flavor to service name
-service_name += "-" + args.flavor
+if str(args.flavor).lower() != "base":
+    service_name += "-" + args.flavor
 
 # docker build
 git_rev = "unknown"
@@ -85,12 +88,15 @@ except:
 vcs_ref_build_arg = " --build-arg ARG_VCS_REF=" + str(git_rev)
 build_date_build_arg = " --build-arg ARG_BUILD_DATE=" + str(build_date)
 flavor_build_arg = " --build-arg ARG_WORKSPACE_FLAVOR=" + str(args.flavor)
+
+ROOT_CONTAINER="nvcr.io/nvidia/tensorflow:22.10.1-tf2-py3" if str(args.flavor).lower() == 'gpu' else "ubuntu:focal"
+container_build_arg = " --build-arg ROOT_CONTAINER=" + str(ROOT_CONTAINER)
 version_build_arg = " --build-arg ARG_WORKSPACE_VERSION=" + str(args.version)
 
 versioned_image = service_name+":"+str(args.version)
 latest_image = service_name+":latest"
 failed = call("DOCKER_BUILDKIT=1 docker build -t "+ versioned_image + " -t " + latest_image + " " 
-            + version_build_arg + " " + flavor_build_arg+ " " + vcs_ref_build_arg + " " + build_date_build_arg + " ./")
+            + version_build_arg + " " + flavor_build_arg+ " " + container_build_arg+ " " + vcs_ref_build_arg + " " + build_date_build_arg + " ./")
 
 if failed:
     print("Failed to build container")
